@@ -19,38 +19,47 @@ def rle_read(fp):
 			match = _re_header.match(line)
 			if not match:
 				raise ValueError("Could not parse header line: %r" % line)
-			grid = BitGrid(int(match.group(1)), int(match.group(2)))
-			continue
+			width = int(match.group(1))
+			height = int(match.group(2))
+			break
+	else:
+		raise ValueError("Did not find header - file blank?")
 
-		for val in _rle_decode(line):
-			if val == -1:
-				x = 0
-				y += 1
-			else:
-				grid[x, y] = val
-				x += 1
-	return grid
+	return BitGrid(width, height, _rle_decode(fp, width))
 
 _unsupported = set("BCDEFGHIJKLMNOPQRSTUVWXYZpqy")
-_supported = {'.': 0, 'b': 0, 'A': 1, 'o': 1, '$': -1}
-def _rle_decode(line):
+_supported = {'.': 0, 'b': 0, 'A': 1, 'o': 1}
+def _rle_decode(fp, width):
 	repeat = ''
-	for ch in line:
-		if ch.isspace():
-			pass
-		elif ch.isdigit():
-			repeat += ch
-		elif ch in _unsupported:
-			raise NotImplementedError("Multistate grids are not currently supported")
-		elif ch in _supported:
-			ch = _supported[ch]
-			if repeat:
-				for i in range(int(repeat)):
+	xpos = 0
+	for line in fp:
+		for ch in line:
+			if ch.isspace():
+				pass
+			elif ch.isdigit():
+				repeat += ch
+			elif ch in _unsupported:
+				raise NotImplementedError("Multistate grids are not currently supported")
+			elif ch in _supported:
+				ch = _supported[ch]
+				if repeat:
+					repeatint = int(repeat)
+					yield from [ch] * repeatint
+					xpos += repeatint
+					repeat = ''
+				else:
 					yield ch
-				repeat = ''
+					xpos += 1
+			elif ch == '$':
+				if repeat:
+					repeatint = int(repeat)
+					yield from [False] * (repeatint * width - xpos)
+					repeat = ''
+				else:
+					yield from [False] * (width - xpos)
+				xpos = 0
+			elif ch == '!':
+				yield from [False] * (width - xpos)
+				return
 			else:
-				yield ch
-		elif ch == '!':
-			return
-		else:
-			raise ValueError("Unrecognised character: %r" % ch)
+				raise ValueError("Unrecognised character: %r" % ch)

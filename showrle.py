@@ -13,7 +13,8 @@ def main(fn):
 		print("P1", file=fp)
 		print(f"{grid.width} {grid.height}", file=fp)
 		for i in grid:
-			print(int(i), file=fp)
+			fp.write("1 " if i else "0 ")
+		print(file=fp)
 	print("done")
 
 def do_profile(fn):
