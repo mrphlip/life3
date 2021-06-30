@@ -25,7 +25,9 @@ function dotileset (n)
 	for i = 1,PERIOD do
 		g.show("Tile " .. n .. " step " .. i)
 		local cells = g.getcells({2048,2048,2048,2048})
-		g.store(cells, "tiles/" .. n .. "/" .. (i-1) .. ".rle")
+		local basename = "tiles/" .. n .. "/" .. (i-1)
+		g.store(cells, basename .. ".rle")
+		os.execute("./convert_format.py " .. basename)
 		g.step()
 	end
 end

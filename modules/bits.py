@@ -1,12 +1,17 @@
-import sys
+import struct
 
-BITS_PER_SLOT = sys.int_info.bits_per_digit
+BITS_PER_SLOT = 64
 
 class BitVector(object):
-	def __init__(self, length_or_data):
-		if isinstance(length_or_data, int):
-			self.length = length
-			self._data = [0] * ((length + BITS_PER_SLOT - 1) // BITS_PER_SLOT)
+	def __init__(self, length_or_data, rawdata=None):
+		if rawdata is not None:
+			if len(rawdata) != ((length_or_data + BITS_PER_SLOT - 1) // BITS_PER_SLOT):
+				raise ValueError("Raw data not correct length")
+			self.length = length_or_data
+			self._data = rawdata
+		elif isinstance(length_or_data, int):
+			self.length = length_or_data
+			self._data = [0] * ((length_or_data + BITS_PER_SLOT - 1) // BITS_PER_SLOT)
 		else:
 			self._data = list(self._build_init_data(length_or_data))
 
@@ -22,7 +27,7 @@ class BitVector(object):
 				yield val
 				length += pos
 				val = pos = 0
-		if pos >= 0:
+		if pos > 0:
 			yield val
 			length += pos
 		self.length = length
@@ -54,14 +59,56 @@ class BitVector(object):
 	def __len__(self):
 		return self.length
 
+	def __eq__(self, other):
+		return self.length == other.length and self._data == other._data
+
+	def _dumpdata(self, fp):
+		for i in range(0, len(self._data), 1024):
+			chunk = self._data[i:i+1024]
+			fp.write(struct.pack(f"<{len(chunk)}Q", *chunk))
+
+	def dump(self, fp):
+		fp.write(struct.pack("<L", self.length))
+		self._dumpdata(fp)
+
+	@classmethod
+	def _loaddata(cls, fp):
+		data = []
+		buffer = b''
+		while True:
+			chunk = fp.read(4096)
+			if not chunk:
+				break
+
+			# just in case it didn't actually read a multiple of 8 bytes somehow
+			if buffer:
+				chunk = buffer + chunk
+			if len(chunk) % 8:
+				cutoff = len(chunk) - len(chunk) % 8
+				buffer = chunk[cutoff:]
+				chunk = chunk[:cutoff]
+			else:
+				buffer = b''
+
+			data.extend(struct.unpack(f"<{len(chunk)//8}Q", chunk))
+		return data
+
+	@classmethod
+	def load(cls, fp):
+		length, = struct.unpack("<L", fp.read(4))
+		data = cls._loaddata(fp)
+		return cls(length, rawdata=data)
+
 class BitGrid(BitVector):
-	def __init__(self, width, height, data=None):
-		if data is None:
-			super().__init__(width * height)
-		else:
+	def __init__(self, width, height, data=None, rawdata=None):
+		if rawdata is not None:
+			super().__init__(width * height, rawdata=rawdata)
+		elif data is not None:
 			super().__init__(data)
 			if self.length != width * height:
 				raise ValueError("initialise data has wrong length")
+		else:
+			super().__init__(width * height)
 		self.width = width
 		self.height = height
 
@@ -76,3 +123,16 @@ class BitGrid(BitVector):
 			x, y = ix
 			ix = x + y * self.width
 		return super().__setitem__(ix, newval)
+
+	def __eq__(self, other):
+		return self.width == other.width and self.height == other.height and self._data == other._data
+
+	def dump(self, fp):
+		fp.write(struct.pack("<LL", self.width, self.height))
+		self._dumpdata(fp)
+
+	@classmethod
+	def load(cls, fp):
+		width, height = struct.unpack("<LL", fp.read(8))
+		data = cls._loaddata(fp)
+		return cls(width, height, rawdata=data)
