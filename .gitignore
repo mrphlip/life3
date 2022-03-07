@@ -1,4 +1,9 @@
-tiles/
 *.profile
 __pycache__
 *.pyc
+tiles
+frames
+constants.py
+constants.lua
+tile_on.gz
+tile_on.gz.pbm

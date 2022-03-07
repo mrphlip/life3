@@ -37,7 +37,8 @@ class BitVector(object):
 			raise IndexError("index out of range")
 		if ix < 0:
 			ix += self.length
-		return ix // BITS_PER_SLOT, 1 << (ix % BITS_PER_SLOT)
+		slot, pos = divmod(ix, BITS_PER_SLOT)
+		return slot, 1 << pos
 
 	def __getitem__(self, ix):
 		slot, val = self._getslot(ix)
@@ -61,6 +62,32 @@ class BitVector(object):
 
 	def __eq__(self, other):
 		return self.length == other.length and self._data == other._data
+
+	def context(self, ix):
+		if ix >= self.length - 1 or ix < 1:
+			raise IndexError("index out of range")
+		slot, pos = divmod(ix, BITS_PER_SLOT)
+		if pos == 0:
+			return self._data[slot - 1] >> (BITS_PER_SLOT - 1) | (self._data[slot] & 0x03) << 1
+		elif pos == BITS_PER_SLOT - 1:
+			return self._data[slot] >> (BITS_PER_SLOT - 2) | (self._data[slot + 1] & 0x01) << 2
+		else:
+			return (self._data[slot] >> (pos - 1)) & 0x07
+
+	def is_covered(self, start, end):
+		startslot, startpos = divmod(start, BITS_PER_SLOT)
+		endslot, endpos = divmod(end, BITS_PER_SLOT)
+
+		if startslot == endslot:
+			return bool(self._data[startslot] & ((1 << endpos) - (1 << startpos)))
+
+		if self._data[startslot] >> startpos:
+			return True
+		if any(self._data[startslot + 1:endslot]):
+			return True
+		if endpos > 0 and self._data[endslot] & ((1 << endpos) - 1):
+			return True
+		return False
 
 	def _dumpdata(self, fp):
 		for i in range(0, len(self._data), 1024):
@@ -126,6 +153,24 @@ class BitGrid(BitVector):
 
 	def __eq__(self, other):
 		return self.width == other.width and self.height == other.height and self._data == other._data
+
+	def context(self, ix):
+		if isinstance(ix, tuple):
+			x, y = ix
+			ix = x + y * self.width
+		return super().context(ix - self.height) | super().context(ix) << 3 | super().context(ix + self.height) << 6
+
+	def is_covered(self, start, end):
+		startx, starty = start
+		endx, endy = end
+		ix = startx + starty * self.width
+		endix = startx + endy * self.width
+		dx = endx - startx
+		while ix < endix:
+			if super().is_covered(ix, ix + dx):
+				return True
+			ix += self.width
+		return False
 
 	def dump(self, fp):
 		fp.write(struct.pack("<LL", self.width, self.height))
