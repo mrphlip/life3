@@ -3,14 +3,12 @@ import math
 import gzip
 import constants
 import subprocess
+import time
 import os
 from modules.bits import BitGrid
 
 GRID_CACHE = {}
 def get_grid(context, frame):
-	#context = constants.TOPLEVEL_CONTEXT
-	#context = 16 if context & 0x10 else 7
-	#frame = 0
 	if (context, frame) not in GRID_CACHE:
 		with gzip.open(f"tiles/{context}/{frame}.gz", "rb") as fp:
 			GRID_CACHE[context, frame] = BitGrid.load(fp)
@@ -78,7 +76,7 @@ def render_pixel_osa(depth, frame, xmin, xmax, ymin, ymax):
 	cx = (xmin + xmax) / 2
 	cy = (ymin + ymax) / 2
 	bloomx = dx * constants.BLOOM
-	bloomy = dx * constants.BLOOM
+	bloomy = dy * constants.BLOOM
 	if constants.OSA <= 1:
 		return render_pixel(depth, frame, cx - bloomx, cx + bloomx, cy - bloomy, cy + bloomy)
 	dat = 0
@@ -124,22 +122,22 @@ def save_frame(frame, dat):
 	os.unlink(f"frames/{frame:08d}.pgm")
 
 def doframe(frame):
-	print(frame)
+	print(f'{frame} - {time.strftime("%Y-%m-%d %H:%M:%S")}')
 	dat = render_frame(frame)
 	save_frame(frame, dat)
 
 def main():
-	for i in range(0, 5160, 20):
-		doframe(i)
-	#doframe(0)
+	#for i in range(0, constants.LOOP_LENGTH * constants.LOOP_COUNT, constants.FPS):
+	#	doframe(i)
+	doframe(0)
+	#doframe(4800+179)
 
 def main_profile():
 	import cProfile
-	import time
 	prof = cProfile.Profile()
 	prof.runcall(main)
 	prof.dump_stats(time.strftime("%Y%m%d-%H%M%S") + ".profile")
 
 if __name__ == '__main__':
-	main()
-	#main_profile()
+	#main()
+	main_profile()
