@@ -4,7 +4,7 @@ set -e
 # be a little nice - keep one core free
 NPROC=$(nproc --ignore 1)
 
-for I in {1..$NPROC}
+for I in $(seq 1 $NPROC)
 do
 	(
 		echo '#!/usr/bin/env golly'
@@ -13,7 +13,7 @@ do
 		echo 'make_tiles_core.quit()'
 	) > make_tiles_$I.lua
 	chmod +x make_tiles_$I.lua
-	./make_tiles_$I.lua
+	./make_tiles_$I.lua &
 done
 
 wait
