@@ -1,4 +1,4 @@
-SMALL_MODE = True
+SMALL_MODE = False
 
 if SMALL_MODE:
 	WIDTH = 640
@@ -8,9 +8,7 @@ else:
 	# Render size: 4K60 sounds good to me
 	WIDTH = 3840
 	HEIGHT = 2160
-	# Oversample a cross with 4 dots per diagonal
-	#OSA = 4
-	OSA = 1
+	OSA = 3
 FPS = 60
 
 # How long to spend each level
@@ -47,7 +45,7 @@ EDGE_BUFFER = 50
 # If this is too low, it causes Moiré effects as the zoom changes
 # IF this is too high, the fine detail becomes a blobby mess as it zooms out
 if SMALL_MODE:
-	BLOOM = 1.1
+	BLOOM = 1.25
 else:
 	BLOOM = 2
 

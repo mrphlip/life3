@@ -118,26 +118,25 @@ unsigned char render_pixel_osa(int depth, int frame, double x1, double x2, doubl
 	double cy = (y1 + y2) / 2;
 	double bloomx = dx * BLOOM;
 	double bloomy = dy * BLOOM;
-	if (OSA <= 1)
+	if (OSA > 1) {
+		// do over-sampling
+		int dat = 0;
+		for (int i = 0; i < OSA; i++) {
+			double factor = 1.0 + double(i) / OSA;
+			dat += render_pixel(depth, frame, cx - bloomx * factor, cx + bloomx * factor, cy - bloomy * factor, cy + bloomy * factor);
+		}
+		return dat / OSA;
+	} else {
+		// single-sample
 		return render_pixel(depth, frame, cx - bloomx, cx + bloomx, cy - bloomy, cy + bloomy);
-	/* TODO change OSA method
-	dat = 0
-	for n in range(OSA):
-		px = xmin + dx * (2 * n + 1) / OSA
-		py = y1 + dy * (2 * n + 1) / OSA
-		dat += render_pixel(depth, frame, px - bloomx, px + bloomx, py - bloomy, py + bloomy)
-		py = y2 - dy * (2 * n + 1) / OSA
-		dat += render_pixel(depth, frame, px - bloomx, px + bloomx, py - bloomy, py + bloomy)
-	return dat / (2 * OSA)
-	*/
-	return 127;
+	}
 }
 
 unsigned char *render_frame(int frame) {
 	int depth = frame / LOOP_LENGTH;
 	frame = frame % LOOP_LENGTH;
 
-	int scale_frame = depth <= 0 ? INIT_NO_SCALE : frame;
+	int scale_frame = depth <= 0 && frame < INIT_NO_SCALE ? INIT_NO_SCALE : frame;
 	double scalex = SCALE_A * std::exp(SCALE_K * scale_frame);
 	double scaley = scalex * HEIGHT / WIDTH;
 
@@ -190,25 +189,62 @@ void save_frame(int frame, unsigned char *image) {
 
 void doframe(int frame) {
 	std::time_t now = time(NULL);
-	std::cout << frame << " - " << std::ctime(&now) << std::endl;
+	std::string nowstr = std::ctime(&now);
+	size_t pos = nowstr.find_last_not_of('\n');
+	if (pos == std::string::npos)
+		nowstr = "";
+	else if (pos < nowstr.length() - 1)
+		nowstr.erase(pos + 1, std::string::npos);
+
+	std::cout << frame << " - " << nowstr << std::endl;
 
 	unsigned char *image = render_frame(frame);
 	save_frame(frame, image);
 }
 
-int main(){
-	doframe(4800+179);
+void doanim(int ofs, int step) {
+	for (int i = ofs; i < LOOP_LENGTH * LOOP_COUNT; i += step) {
+		doframe(i);
+	}
+}
 
-	/*
-	int depth = 0, frame = 0;
-	double scalex = SCALE_A * std::exp(SCALE_K * INIT_NO_SCALE);
-	double scaley = scalex * HEIGHT / WIDTH;
+void usage() {
+	std::cout
+		<< "Usage:\n"
+		<< "  make_animation              - render entire animation\n"
+		<< "  make_animation frame        - render a single frame\n"
+		<< "  make_animation offset step  - render a slice of the animation\n";
+}
 
-	double xmin = CENTRES_FLOATX[depth] - scalex/2;
-	double ymin = CENTRES_FLOATY[depth] - scaley/2;
-	int x = 300, y = 180;
-	int c = render_pixel_osa(depth, frame, xmin + scalex * double(x)/WIDTH, xmin + scalex * double(x+1)/WIDTH, ymin + scaley * double(y)/HEIGHT, ymin + scaley * double(y+1)/HEIGHT);
-	*/
+int main(int argn, char **argv) {
+	if (argn == 1) {
+		doanim(1, 1);
+	} else if (argn == 2) {
+		char *endptr;
+		int frame = std::strtol(argv[1], &endptr, 0);
+		if (*endptr != '\0') {
+			usage();
+			return 1;
+		}
+
+		doframe(frame);
+	} else if (argn == 3) {
+		char *endptr;
+		int ofs = std::strtol(argv[1], &endptr, 0);
+		if (*endptr != '\0') {
+			usage();
+			return 1;
+		}
+		int step = std::strtol(argv[2], &endptr, 0);
+		if (*endptr != '\0') {
+			usage();
+			return 1;
+		}
+
+		doanim(ofs, step);
+	} else {
+		usage();
+	}
 
 	return 0;
 }

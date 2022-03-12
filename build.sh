@@ -19,4 +19,5 @@ cp tiles/16/0.gz tile_on.gz
 
 # generate animation
 mkdir -p frames
-./make_animation.py
+make make_animation
+./make_animation_multi.sh

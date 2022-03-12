@@ -30,8 +30,8 @@ BitGrid * BitGrid::load(std::string filename) {
 	fp.seekg(0, fp.beg);
 
 	// initialise zlib
-	const int BUFLEN = 4096;
-	unsigned char inbuffer[BUFLEN], outbuffer[BUFLEN];
+	static const int BUFLEN = 65536;
+	static unsigned char inbuffer[BUFLEN], outbuffer[BUFLEN];
 	z_stream strm;
 	memset(&strm, 0, sizeof(strm));
 	strm.zalloc = Z_NULL;
