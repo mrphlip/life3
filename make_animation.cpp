@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <ctime>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "bitgrid.h"
 #include "constants.h"
@@ -60,7 +62,7 @@ bool is_covered(int depth, int frame, int depthofs, int depthmax, double x1, dou
 	} else {
 		int ix1 = ifloor(x1), ix2 = ifloor(x2), iy1 = ifloor(y1), iy2 = ifloor(y2);
 		double newx1 = (x1 - ix1) * LOOP_SCALE, newx2 = (x2 - ix2) * LOOP_SCALE, newy1 = (y1 - iy1) * LOOP_SCALE, newy2 = (y2 - iy2) * LOOP_SCALE;
-		if (ix2 > ix1 + 1 || iy2 > ix1 + 1) {
+		if (ix2 > ix1 + 1 || iy2 > iy1 + 1) {
 			// shouldn't happen, sanity check shortcut
 			return 1;
 		}
@@ -157,7 +159,14 @@ unsigned char *render_frame(int frame) {
 
 void save_frame(int frame, unsigned char *image) {
 	std::ostringstream filename;
-	filename << "frames/" << std::setw(8) << std::setfill('0') << frame;
+	filename << "frames/" << std::setw(4) << std::setfill('0') << (frame / LOOP_LENGTH);
+	if (access(filename.str().c_str(), F_OK)) {
+		if (mkdir(filename.str().c_str(), 0755)) {
+			std::cerr << "Error creating subdir" << std::endl;
+			std::exit(1);
+		}
+	}
+	filename << '/' << std::setw(8) << std::setfill('0') << frame;
 	std::string pgmfilename = filename.str() + ".pgm";
 	std::string pngfilename = filename.str() + ".png";
 
