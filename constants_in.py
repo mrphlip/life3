@@ -47,5 +47,4 @@ EDGE_BUFFER = 50
 if SMALL_MODE:
 	BLOOM = 1.25
 else:
-	BLOOM = 2
-
+	BLOOM = 5
