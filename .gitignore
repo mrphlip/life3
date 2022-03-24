@@ -12,3 +12,6 @@ tile_on.gz.pbm
 make_animation
 make_tiles_[0-9].lua
 make_tiles_[0-9][0-9].lua
+music/
+soundtrack.m4a
+life.mp4
