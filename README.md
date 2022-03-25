@@ -22,15 +22,15 @@ The code here is a bit scattered around, but can be mostly be broken up as:
     * `constants_in.py`
     * `gen_constants.py`
 1. Other assorted miscellaneous scripts:
-    * `make_video.sh` - convert the final video to MP4 to upload
-    * `build.sh` - run all everything in order... more intended as reference, than to actually be run directly
-    * `show_tile.py` - convert the tile data into an image format so it can be easily inspected
-    * `showrle.py` - convert the RLE file format exported from Golly into an image format
+    * `make_video.sh` &ndash; convert the final video to MP4 to upload
+    * `build.sh` &ndash; run all everything in order... more intended as reference, than to actually be run directly
+    * `show_tile.py` &ndash; convert the tile data into an image format so it can be easily inspected
+    * `showrle.py` &ndash; convert the RLE file format exported from Golly into an image format
 
 ## How to run the code
 On the offchance you actually want to run this code yourself, rather than just reading it out of curiosity, here's what you would need to do:
 ### Prerequisites
-* Linux - this could probably be converted to work on Windows but that's what it's written for
+* Linux &ndash; this could probably be converted to work on Windows but that's what it's written for
 * Golly (including Lua engine)
 * Python 3
 * GCC, make, and whatever other packages your distro needs to build C++ code
