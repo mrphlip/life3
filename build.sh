@@ -1,16 +1,10 @@
 #!/bin/bash
 set -e
 
-NPROCS="$(($(ncpus) - 1))"
-
 # clean environment
-rm -f constants.py constants.lua
+rm -f constants.py constants.lua constants.h
 rm -rf tiles/* tile_on.gz
 rm -rf frames/
-
-# generate some basic tiles, for gen_constants
-./make_tiles_basic.lua
-cp tiles/16/0.gz tile_on.gz
 
 # generate data
 ./gen_constants.py
@@ -20,4 +14,7 @@ cp tiles/16/0.gz tile_on.gz
 # generate animation
 mkdir -p frames
 make make_animation
-./make_animation_multi.sh
+./make_animation_multiproc.sh
+
+# generate video file
+./make_video.sh

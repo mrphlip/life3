@@ -100,6 +100,36 @@ unsigned char render_pixel_level(int depth, int frame, int depthmax, double x1, 
 	y1 = CENTRESY[depth+1] + y1 / LOOP_SCALE;
 	y2 = CENTRESY[depth+1] + y2 / LOOP_SCALE;
 
+	/*
+	If you've read this far into the code, you might be interested in an amusing fact:
+	
+	Each level of the metapixel grid is 2048 pixels across, that's the LOOP_SCALE, so
+	it takes 11 bits of precision in each direction to pinpoint a specific pixel in
+	the grid.
+
+	The rendering process here works on four different levels - the top level (which is
+	far enough out that we don't see it change), the outer level (that we zoom out into),
+	the current main level (that we start watching, and then zoom out so it's one of many
+	small squares), and the sub level (which comprise the many small squares at the
+	start of the loop)... so we want to be able to pinpoint a specific location, 4 levels deep.
+
+	This takes 44 bits of precision, just to be accurate to the nearest pixel... we'd like a bit
+	more precision so we can have fractional locations within that smallest pixel, just in case.
+
+	A double-precision float has 53 bits of precision.
+
+	So those 53 bits are essentially storing:
+	* the first 11 bits hold CENTRES[depth+1]
+	* the next 11 bits hold CENTRES[depth]
+	* the next 11 bits hold where we are on the main level
+	* the next 11 bits hold where we are on the sub level
+	* the final 9 bits are there for moral support and to stop rounding errors being visable
+
+	So we have enough precision to do what we want, but we could _not_ go one level deeper
+	with this datatype. Switching to long doubles could let us go a little further, but
+	not much.
+	*/
+
 	return is_covered(depth, frame, 2, depthmax, x1, x2, y1, y2, TOPLEVEL_CONTEXT) ? 255 : 0;
 }
 

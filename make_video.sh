@@ -8,7 +8,7 @@ then
 	ARGS+=(-i soundtrack.m4a)
 fi
 ARGS+=(
-	-codec:v libx264 -b:v 60M -profile:v high -pix_fmt yuv420p
+	-codec:v libx264 -b:v 10M -profile:v high -pix_fmt yuv420p
 	-codec:a copy
 	-movflags +faststart
 	life.mp4

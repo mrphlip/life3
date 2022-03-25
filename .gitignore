@@ -6,8 +6,6 @@ frames
 constants.py
 constants.h
 constants.lua
-tile_on.gz
-tile_on.gz.pbm
 *.o
 make_animation
 make_tiles_[0-9].lua
@@ -15,3 +13,4 @@ make_tiles_[0-9][0-9].lua
 music/
 soundtrack.m4a
 life.mp4
+thumbnail.png
